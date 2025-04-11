@@ -5,7 +5,6 @@ import section2bgImg from "../assets/images/10.png";
 import card1Img from "../assets/images/11.png"
 import card2Img from "../assets/images/12.png"
 import card3Img from "../assets/images/13.png"
-import { BackgroundBlogCard } from "../pages/Blog/BlogCard/BlogPostCard";
 
 
 const MainLandingPage = () => {
@@ -177,8 +176,8 @@ const MainLandingPage = () => {
                     <h3 className="text-4xl font-bold text-logoGreen  flex items-center justify-center my-16">Blogs</h3>
 
                     <div className=" flex items-center justify-evenly">
-                        <BackgroundBlogCard />
-                        <BackgroundBlogCard />
+                        {/* <BackgroundBlogCard />
+                        <BackgroundBlogCard /> */}
                     </div>
                 </div>
 

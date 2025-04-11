@@ -116,7 +116,6 @@ const Login = () => {
           <button className="border border-gray bg-darkGray text-black font-semibold px-4 py-2 rounded-lg w-full mt-4 hover:shadow-lg transition dark:bg-black dark:text-white dark:hover:bg-white dark:hover:text-black duration-200 ease-linear">
             Log in
           </button>
-
           {/* Forgot Password */}
           <div className="mt-3 text-right">
             <Link to="#" className="text-darkGray text-sm dark:bg-black dark:text-white">
