@@ -1,21 +1,44 @@
 import React, { useState, useRef } from 'react'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card, CardContent, CardFooter, CardHeader, CardTitle
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Mic, SendHorizonal, Volume2 } from 'lucide-react'
+import { Mic, SendHorizonal, Volume2, Image as ImageIcon } from 'lucide-react'
 
 const Chat = () => {
-  const [messages, setMessages] = useState([
-    { sender: "farmer", text: "Hello, anyone there?" },
-    { sender: "agent", text: "Yes, how can I help you today?" }
-  ])
+  const [messages, setMessages] = useState([])
   const [input, setInput] = useState("")
+  const [chatTitle, setChatTitle] = useState("")
+  const [loading, setLoading] = useState(false)
   const recognitionRef = useRef(null)
+  const fileInputRef = useRef(null)
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (input.trim() === "") return
-    setMessages([...messages, { sender: "farmer", text: input }])
+
+    const newMessage = { sender: "farmer", text: input }
+    const updatedMessages = [...messages, newMessage]
+    setMessages(updatedMessages)
     setInput("")
+    setLoading(true)
+
+    try {
+      const res = await fetch("http://localhost:5000/msg", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: updatedMessages })
+      })
+
+      const data = await res.json()
+
+      if (data.title && !chatTitle) setChatTitle(data.title)
+      setMessages(prev => [...prev, { sender: "agent", text: data.reply }])
+    } catch (err) {
+      console.error("Error sending message:", err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const speak = (text) => {
@@ -47,41 +70,81 @@ const Chat = () => {
     recognitionRef.current = recognition
   }
 
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files)
+    files.forEach(file => {
+      const url = URL.createObjectURL(file)
+      const imageMessage = {
+        sender: "farmer",
+        image: url
+      }
+      setMessages(prev => [...prev, imageMessage])
+    })
+  }
+
   return (
-    <div className='w-full h-full p-2'>
-      <Card className="h-full flex flex-col border shadow-xl">
-      <CardHeader className="sticky top-0 z-10 bg-white border-b shadow-sm rounded-t-lg">
-  <div className="flex items-center justify-center w-full">
-    <CardTitle className="text-xl font-semibold text-green-700">
-      Chat Title
-    </CardTitle>
-  </div>
-</CardHeader>
-        <CardContent className="flex-1 overflow-y-auto space-y-2 px-2 py-1">
+    <div className='w-full h-full p-4'>
+      <Card className="h-full flex flex-col border shadow-2xl">
+        <CardHeader className="sticky top-0 z-10 bg-white border-b shadow-md rounded-t-lg">
+          <div className="flex items-center justify-center w-full">
+            <CardTitle className="text-xl font-bold text-green-600">
+              Let's Talk  - - - powered by Green Pulse
+            </CardTitle>
+          </div>
+        </CardHeader>
+
+        <CardContent className="flex-1 overflow-y-auto space-y-3 px-0 py-3">
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`max-w-[80%] flex items-center gap-2 px-4 py-2 rounded-xl text-white ${
-                msg.sender === "farmer"
-                  ? "bg-green-600 self-end ml-auto"
-                  : "bg-gray-700 self-start mr-auto"
+              className={`max-w-[80%] px-4 py-2 transition-all bg-gray-200 ${
+                msg.sender === "farmer" ? "self-end ml-auto" : "self-start mr-auto"
               }`}
             >
-              <span>{msg.text}</span>
-              {msg.sender === "agent" && (
-                <button
-                  onClick={() => speak(msg.text)}
-                  className="text-white hover:text-yellow-400"
-                  title="Listen"
-                >
-                  <Volume2 size={18} />
-                </button>
+              {msg.text && (
+                <div className="flex items-center gap-2">
+                  <span className="break-words">{msg.text}</span>
+                  {msg.sender === "agent" && (
+                    <button
+                      onClick={() => speak(msg.text)}
+                      className="text-gray-600 hover:text-yellow-500"
+                      title="Listen"
+                    >
+                      <Volume2 size={18} />
+                    </button>
+                  )}
+                </div>
+              )}
+              {msg.image && (
+                <img
+                  src={msg.image}
+                  alt={`upload-${index}`}
+                  className="w-32 h-32 object-cover mt-2 rounded-lg border"
+                />
               )}
             </div>
           ))}
+
+          {loading && (
+            <div className="text-sm text-gray-500 px-4">Agent is typing...</div>
+          )}
         </CardContent>
 
-        <CardFooter className="flex gap-2 px-4 py-3 border-t">
+        <CardFooter className="flex gap-2 px-4 py-3 border-t bg-white">
+          <Button onClick={handleMicClick} variant="outline" title="Speak">
+            <Mic size={18} />
+          </Button>
+          <Button variant="outline" title="Upload image" onClick={() => fileInputRef.current.click()}>
+            <ImageIcon size={18} />
+          </Button>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+          />
           <Input
             placeholder="Type your message..."
             value={input}
@@ -89,9 +152,6 @@ const Chat = () => {
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             className="flex-1"
           />
-          <Button onClick={handleMicClick} variant="outline" title="Speak">
-            <Mic size={18} />
-          </Button>
           <Button onClick={sendMessage} title="Send">
             <SendHorizonal size={18} />
           </Button>
